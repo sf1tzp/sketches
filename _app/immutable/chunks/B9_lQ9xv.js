@@ -1,0 +1,1 @@
+import{e as a,g as c,f as n,i as f,u,j as s,q as o}from"./BETZE4PW.js";function m(i){let e=0,r=n(0),t;return()=>{a()&&(c(r),f(()=>(e===0&&(t=u(()=>i(()=>s(r)))),e+=1,()=>{o(()=>{e-=1,e===0&&(t?.(),t=void 0,s(r))})})))}}export{m as c};
