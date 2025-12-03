@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import type p5Type from 'p5';
-    import { createSketch } from './script';
+    import { createSketch } from './script.svelte';
 
     let container: HTMLDivElement;
     let p5Instance: p5Type;

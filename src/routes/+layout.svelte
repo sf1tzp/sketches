@@ -11,4 +11,6 @@
 </svelte:head>
 
 <ModeWatcher />
-{@render children()}
+<div class="h-dvh">
+	{@render children()}
+</div>

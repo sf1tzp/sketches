@@ -1,12 +1,12 @@
 import type p5 from 'p5';
 
 // Configuration
-export const GRID_SIZE = 16;
-export const REGION_THRESHOLD = 4;
+export const GRID_SIZE = 24;
+export const REGION_THRESHOLD = 16;
 export const MERGE_PROBABILITY = 0.5;
-export const MAX_REGION_SIZE = 24;
-export const BLUR_AMOUNT = 2;
-export const TRANSITION_FRAMES = 25;
+export const MAX_REGION_SIZE = 36;
+export const BLUR_AMOUNT = 24;
+export const TRANSITION_FRAMES = 145;
 export const EASING_TYPE: 'linear' | 'easeInOutCubic' | 'easeInOutQuad' = 'easeInOutCubic';
 
 // Palettes
@@ -15,7 +15,7 @@ export const sunset = { "Cherry Rose": "a40e4c", "Space Indigo": "2c2c54", "Ash 
 export const desertNight = { "Sandy Clay": "e1b07e", "Desert Sand": "e5be9e", "Pale Oak": "cbc0ad", "Muted Teal": "86a397", "Midnight Violet": "361d2e" };
 export const marble = { "Dust Grey": "e2dadb", "Alabaster Grey": "dae2df", "Ash Grey": "a2a7a5", "Dim Grey": "6d696a", "White": "ffffff" };
 
-export const pallets = [earthy, sunset, desertNight];
+export const pallets = [earthy, sunset, desertNight, sunset, marble];
 
 // Types
 interface CellState {
@@ -111,9 +111,11 @@ export function createSketch(container: HTMLElement) {
         let currentState: CellState[] | null = null;
         let nextState: CellState[] | null = null;
         let transitionProgress = 1;
+        let palletIndex = 0
 
         function pickNewPallet(): void {
-            currentPallet = p.random(pallets);
+            palletIndex = (palletIndex + 1) % pallets.length;
+            currentPallet = pallets[palletIndex];
             palletColors = Object.values(currentPallet);
         }
 
@@ -283,9 +285,9 @@ export function createSketch(container: HTMLElement) {
             p.noStroke();
             pickNewPallet();
 
-            // Apply blur filter (only works with 2D context)
-            const ctx = p.drawingContext as CanvasRenderingContext2D;
-            ctx.filter = `blur(${BLUR_AMOUNT}px)`;
+            // // Apply blur filter (only works with 2D context)
+            // p.filter(p.BLUR, BLUR_AMOUNT); // slow
+            // p.drawingContext.filter = 'blur(1px)'; // doesn't work on all browser renderers
 
             generateRegions();
             currentState = captureState();
@@ -300,7 +302,7 @@ export function createSketch(container: HTMLElement) {
             if (transitionProgress >= 1) {
                 currentState = nextState;
 
-                if (p.random() < 0.6) {
+                if (p.random() < 0.85) {
                     pickNewPallet();
                 }
 
