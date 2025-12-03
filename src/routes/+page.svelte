@@ -3,11 +3,11 @@
     import MosaicMorph from "$lib/components/sketches/mosaic-morph.svelte";
 </script>
 
-<h1 class="text-4xl text-center font-semibold mt-8">A Sketch</h1>
+<h1 class="text-4xl text-center font-semibold m-8">Sketches</h1>
 
-<Card class="mt-12 max-w-lg mx-4 md:mx-auto overflow-hidden">
+<Card class="max-w-lg mx-4 md:mx-auto overflow-hidden">
     <div class="flex justify-center">
-        <div class="h-dvh w-full px-2">
+        <div class="h-36 w-full px-2">
             <MosaicMorph />
         </div>
 
