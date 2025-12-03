@@ -1,32 +1,36 @@
-const GRID_SIZE = 15; // Size of each grid square
-const REGION_THRESHOLD = 5; // Regions with more cells than this use palette colors
+const GRID_SIZE = 16; // Size of each grid square
+const REGION_THRESHOLD = 4; // Regions with more cells than this use palette colors
 const MERGE_PROBABILITY = 0.5; // Chance to merge adjacent cells into same region
-const MAX_REGION_SIZE = 25; // Maximum number of cells in a region
+const MAX_REGION_SIZE = 24; // Maximum number of cells in a region
+const BLUR_AMOUNT = 4; // Gaussian blur radius in pixels
 
-let currentPalette;
-let paletteColors;
+let currentPallet;
+let palletColors;
 let grid;
 let regions;
 let cols, rows;
 
 function setup() {
-  // createCanvas(2560, 1440);
+  createCanvas(1024, 1024);
   // createCanvas(3840,2160);
-  createCanvas(3840,2160);
+  // createCanvas(3840,2160);
   // createCanvas(5120, 2880);
   noStroke();
-  pickNewPalette();
+  pickNewPallet();
   // redraw();
 
+  // Apply Gaussian blur to the canvas
+  drawingContext.filter = `blur(${BLUR_AMOUNT}px)`;
+
   // Change palette every second
-  setInterval(pickNewPalette, 8000);
-  frameRate(8);
+  setInterval(pickNewPallet, 100);
+  frameRate(25);
 }
 
-function pickNewPalette() {
-  currentPalette = random(pallets);
+function pickNewPallet() {
+  currentPallet = random(pallets);
   // Convert palette object values to array of hex colors
-  paletteColors = Object.values(currentPalette);
+  palletColors = Object.values(currentPallet);
 }
 
 // Union-Find data structure for grouping cells into regions
@@ -120,7 +124,7 @@ function generateRegions() {
   for (const [root, region] of regionMap) {
     if (region.cells.length > REGION_THRESHOLD) {
       // Large region: use palette color
-      const hexColor = random(paletteColors);
+      const hexColor = random(palletColors);
       region.color = '#' + hexColor;
     } else {
       // Small region: use gray palette

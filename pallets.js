@@ -10,12 +10,6 @@ const marble = {"Dust Grey":"e2dadb","Alabaster Grey":"dae2df","Ash Grey":"a2a7a
 
 const desertNight = {"Sandy Clay":"e1b07e","Desert Sand":"e5be9e","Pale Oak":"cbc0ad","Muted Teal":"86a397","Midnight Violet":"361d2e"}
 
-const pallets = [earthy, sunset, marble, desertNight];
+const pallets = [earthy, sunset, desertNight];
 
-const GRAY_PALETTE = [
-    240,  // Very light gray
-    192,  // Light gray
-    128,  // Medium gray
-    64,   // Dark gray
-    16    // Very dark gray
-];
+const greyPallet = [marble];
