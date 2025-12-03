@@ -1,8 +1,12 @@
-const GRID_SIZE = 16; // Size of each grid square
+const GRID_SIZE = 24; // Size of each grid square
 const REGION_THRESHOLD = 4; // Regions with more cells than this use palette colors
 const MERGE_PROBABILITY = 0.5; // Chance to merge adjacent cells into same region
 const MAX_REGION_SIZE = 24; // Maximum number of cells in a region
-const BLUR_AMOUNT = 4; // Gaussian blur radius in pixels
+const BLUR_AMOUNT = 2; // Gaussian blur radius in pixels
+
+// Animation settings
+const TRANSITION_FRAMES = 5; // Number of frames to transition between states
+const EASING_TYPE = 'easeInOutCubic'; // 'linear', 'easeInOutCubic', 'easeInOutQuad'
 
 let currentPallet;
 let palletColors;
@@ -10,27 +14,80 @@ let grid;
 let regions;
 let cols, rows;
 
+// Animation state
+let currentState = null;  // Current frame's cell data
+let nextState = null;     // Target frame's cell data
+let transitionProgress = 1; // 0 to 1, 1 means transition complete
+let frameCounter = 0;
+
 function setup() {
-  createCanvas(1024, 1024);
+  // createCanvas(512, 512);
+  createCanvas(1920, 1080);
   // createCanvas(3840,2160);
   // createCanvas(3840,2160);
   // createCanvas(5120, 2880);
   noStroke();
   pickNewPallet();
-  // redraw();
 
   // Apply Gaussian blur to the canvas
   drawingContext.filter = `blur(${BLUR_AMOUNT}px)`;
 
-  // Change palette every second
-  setInterval(pickNewPallet, 100);
-  frameRate(25);
+  // Initialize first state
+  generateRegions();
+  currentState = captureState();
+  nextState = captureState();
+
+  frameRate(60); // Higher framerate for smooth animation
 }
 
 function pickNewPallet() {
   currentPallet = random(pallets);
   // Convert palette object values to array of hex colors
   palletColors = Object.values(currentPallet);
+}
+
+// Easing functions for smooth animations
+function easeLinear(t) {
+  return t;
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function easeInOutQuad(t) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function getEasing(t) {
+  switch (EASING_TYPE) {
+    case 'easeInOutCubic': return easeInOutCubic(t);
+    case 'easeInOutQuad': return easeInOutQuad(t);
+    default: return easeLinear(t);
+  }
+}
+
+// Capture current state for animation
+function captureState() {
+  const state = [];
+  for (let i = 0; i < grid.length; i++) {
+    const cell = grid[i];
+    const region = regions.get(cell.regionRoot);
+    state.push({
+      color: color(region.color),
+      isSquare: cell.isSquare,
+      skipCorner: cell.skipCorner
+    });
+  }
+  return state;
+}
+
+// Lerp between two colors
+function lerpColor2(c1, c2, amt) {
+  const r = lerp(red(c1), red(c2), amt);
+  const g = lerp(green(c1), green(c2), amt);
+  const b = lerp(blue(c1), blue(c2), amt);
+  return color(r, g, b);
 }
 
 // Union-Find data structure for grouping cells into regions
@@ -144,28 +201,61 @@ function generateRegions() {
 function draw() {
   background(20);
 
-  // Generate new regions each frame
-  generateRegions();
+  // Check if we need to start a new transition
+  if (transitionProgress >= 1) {
+    // Transition complete, generate new target state
+    currentState = nextState;
 
-  // Loop through each grid cell
+    // Occasionally pick a new palette
+    if (random() < 0.6) {
+      pickNewPallet();
+    }
+
+    generateRegions();
+    nextState = captureState();
+    transitionProgress = 0;
+  }
+
+  // Calculate eased progress
+  const easedProgress = getEasing(transitionProgress);
+
+  // Loop through each grid cell and draw interpolated state
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const x = col * GRID_SIZE;
       const y = row * GRID_SIZE;
       const idx = row * cols + col;
-      const cell = grid[idx];
-      const region = regions.get(cell.regionRoot);
 
-      // Set the region's color
-      fill(region.color);
+      const currCell = currentState[idx];
+      const nextCell = nextState[idx];
 
-      if (cell.isSquare) {
-        drawSquare(x, y);
+      // Interpolate color
+      const interpolatedColor = lerpColor2(currCell.color, nextCell.color, easedProgress);
+      fill(interpolatedColor);
+
+      // For shape morphing, we blend between shapes
+      if (currCell.isSquare === nextCell.isSquare) {
+        // Same shape type, just draw it
+        if (currCell.isSquare) {
+          drawSquare(x, y);
+        } else {
+          // Interpolate between skip corners if different
+          if (currCell.skipCorner === nextCell.skipCorner) {
+            drawTriangle(x, y, currCell.skipCorner);
+          } else {
+            // Morph between triangles using animated corner
+            drawMorphingTriangle(x, y, currCell.skipCorner, nextCell.skipCorner, easedProgress);
+          }
+        }
       } else {
-        drawTriangle(x, y, cell.skipCorner);
+        // Shape type is changing - morph between square and triangle
+        drawMorphingShape(x, y, currCell, nextCell, easedProgress);
       }
     }
   }
+
+  // Advance transition
+  transitionProgress += 1 / TRANSITION_FRAMES;
 }
 
 function drawSquare(x, y) {
@@ -196,7 +286,72 @@ function drawTriangle(x, y, skipCorner) {
   endShape(CLOSE);
 }
 
-// Click to regenerate
-function mousePressed() {
-  redraw();
+// Morph between two triangles with different skip corners
+function drawMorphingTriangle(x, y, fromSkip, toSkip, progress) {
+  const corners = [
+    [x, y],                             // Top-left
+    [x + GRID_SIZE, y],                 // Top-right
+    [x + GRID_SIZE, y + GRID_SIZE],     // Bottom-right
+    [x, y + GRID_SIZE]                  // Bottom-left
+  ];
+
+  // Calculate center point for morphing
+  const centerX = x + GRID_SIZE / 2;
+  const centerY = y + GRID_SIZE / 2;
+
+  beginShape();
+  for (let i = 0; i < 4; i++) {
+    let px = corners[i][0];
+    let py = corners[i][1];
+
+    if (i === fromSkip) {
+      // This corner is disappearing - move toward center
+      px = lerp(centerX, corners[i][0], progress);
+      py = lerp(centerY, corners[i][1], progress);
+    } else if (i === toSkip) {
+      // This corner will disappear - move toward center
+      px = lerp(corners[i][0], centerX, progress);
+      py = lerp(corners[i][1], centerY, progress);
+    }
+
+    vertex(px, py);
+  }
+  endShape(CLOSE);
 }
+
+// Morph between square and triangle
+function drawMorphingShape(x, y, fromCell, toCell, progress) {
+  const corners = [
+    [x, y],                             // Top-left
+    [x + GRID_SIZE, y],                 // Top-right
+    [x + GRID_SIZE, y + GRID_SIZE],     // Bottom-right
+    [x, y + GRID_SIZE]                  // Bottom-left
+  ];
+
+  const centerX = x + GRID_SIZE / 2;
+  const centerY = y + GRID_SIZE / 2;
+
+  beginShape();
+  for (let i = 0; i < 4; i++) {
+    let px = corners[i][0];
+    let py = corners[i][1];
+
+    if (fromCell.isSquare && !toCell.isSquare && i === toCell.skipCorner) {
+      // Morphing from square to triangle - shrink this corner toward center
+      px = lerp(corners[i][0], centerX, progress);
+      py = lerp(corners[i][1], centerY, progress);
+    } else if (!fromCell.isSquare && toCell.isSquare && i === fromCell.skipCorner) {
+      // Morphing from triangle to square - expand this corner from center
+      px = lerp(centerX, corners[i][0], progress);
+      py = lerp(centerY, corners[i][1], progress);
+    }
+
+    vertex(px, py);
+  }
+  endShape(CLOSE);
+}
+
+// // Click to regenerate
+// function mousePressed() {
+//   redraw();
+// }
