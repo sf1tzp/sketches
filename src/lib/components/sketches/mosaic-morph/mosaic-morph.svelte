@@ -12,17 +12,19 @@
     interface Props {
         /** The index of this sketch in the carousel (for visibility tracking) */
         index?: number;
+        initialSize?: number;
+        initialSpeed?: number;
     }
 
-    let { index = 0 }: Props = $props();
+    let { index = 0, initialSize = 0.4, initialSpeed = 0.8 }: Props = $props();
 
     let container: HTMLDivElement;
     let p5Instance: p5Type;
     let sketchController: SketchController | null = null;
     let triggerSizeChange: (() => void) | null = null;
 
-    let gridSizeValue = $state(0.4);
-    let speedValue = $state(0.667);
+    let gridSizeValue = $state(initialSize);
+    let speedValue = $state(initialSpeed);
 
     // Convert slider values (0-1) to actual config values
     // Grid size: 0 = min, 1 = max
@@ -81,7 +83,7 @@
             <Puzzle class="size-4 mt-1 font-light text-muted-foreground"/>
             <h2 class="font-light text-muted-foreground hidden sm:inline-block font-mono">size</h2>
         </div>
-        <RadioGroup.Root value="0.4" onValueChange={(v) => gridSizeValue = parseFloat(v)} class="flex flex-row gap-4">
+        <RadioGroup.Root value={initialSize.toString()} onValueChange={(v) => gridSizeValue = parseFloat(v)} class="flex flex-row gap-4">
           <div class="flex items-center space-x-2">
             <RadioGroup.Item value="0.1" id="size-small" />
             <Label for="size-small" class="text-muted-foreground font-mono">small</Label>
@@ -105,7 +107,7 @@
             <Gauge class="size-4 mt-1 font-light text-muted-foreground"/>
             <h2 class="font-light text-muted-foreground font-mono hidden sm:inline-block">speed</h2>
         </div>
-        <RadioGroup.Root value="0.8" onValueChange={(v) => speedValue = parseFloat(v)} class="flex flex-row gap-4">
+        <RadioGroup.Root value={initialSpeed.toString()} onValueChange={(v) => speedValue = parseFloat(v)} class="flex flex-row gap-4">
           <div class="flex items-center space-x-2">
             <RadioGroup.Item value="0.2" id="speed-slow" />
             <Label for="size-small" class="text-muted-foreground font-mono">slow</Label>
