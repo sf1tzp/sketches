@@ -8,6 +8,9 @@
     import Puzzle from '@lucide/svelte/icons/puzzle';
     import CardTitle from '$lib/components/ui/card/card-title.svelte';
 
+    import { Label } from "$lib/components/ui/label/index.js";
+    import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
+
     let container: HTMLDivElement;
     let p5Instance: p5Type;
     let triggerSizeChange: (() => void) | null = null;
@@ -64,14 +67,32 @@
         </div>
         <div class="flex justify-end px-4 mt-8">
             <Puzzle class="size-8 mr-4 pb-1 text-muted-foreground"/>
-            <h2 class="mr-4 text-muted-foreground">Size</h2>
-            <Slider type="single" bind:value={gridSizeValue} max={1} step={0.01} class="" ></Slider>
+            <h2 class="mr-4 text-muted-foreground">Size {gridSizeValue}</h2>
+            <Slider type="single" bind:value={gridSizeValue} max={1} min={0.1} step={0.3} class="" ></Slider>
         </div>
+        <div class="flex">
+            <!-- small = 0.1 -->
+            <!-- med = .4 -->
+            <!-- large = .7 -->
+            <!-- small = 0.9 -->
+            <RadioGroup.Root value="option-one" class="flex-row">
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="option-one" id="option-one" />
+                <Label for="option-one">Option One</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="option-two" id="option-two" />
+                <Label for="option-two">Option Two</Label>
+              </div>
+            </RadioGroup.Root>
+        </div>
+
         <div class="flex justify-end px-4 mt-8">
             <Gauge class="size-8 mr-4 pb-1 text-muted-foreground"/>
-            <h2 class="mr-4 text-muted-foreground">Speed</h2>
+            <h2 class="mr-4 text-muted-foreground">Speed {speedValue}</h2>
             <Slider type="single" bind:value={speedValue} max={1} step={0.01} class="pb-2" ></Slider>
         </div>
+
     </Card.Content>
 </Card.Root>
 
