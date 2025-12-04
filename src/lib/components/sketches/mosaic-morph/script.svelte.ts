@@ -10,8 +10,10 @@ export const REGION_THRESHOLD = 16;
 export const MAX_REGION_SIZE = 36;
 
 export const MERGE_PROBABILITY = 0.5;
-export const BLUR_AMOUNT = 24;
 export const EASING_TYPE: 'linear' | 'easeInOutCubic' | 'easeInOutQuad' = 'easeInOutCubic';
+
+const PALETTE_CHANGE_PROBABILITY = 0.85;
+const BACKGROUND_COLOR = 20;
 
 // Palettes
 export const earthy = { "Coffee Bean": "230903", "Ebony": "656256", "Muted Teal": "9ebc9f", "Tan": "d3b88c", "White Smoke": "f4f2f3" };
@@ -19,7 +21,7 @@ export const sunset = { "Cherry Rose": "a40e4c", "Space Indigo": "2c2c54", "Ash 
 export const desertNight = { "Sandy Clay": "e1b07e", "Desert Sand": "e5be9e", "Pale Oak": "cbc0ad", "Muted Teal": "86a397", "Midnight Violet": "361d2e" };
 export const marble = { "Dust Grey": "e2dadb", "Alabaster Grey": "dae2df", "Ash Grey": "a2a7a5", "Dim Grey": "6d696a", "White": "ffffff" };
 
-export const pallets = [earthy, sunset, desertNight, sunset, marble];
+export const palettes = [earthy, sunset, desertNight, sunset, marble];
 
 // Types
 interface CellState {
@@ -138,8 +140,8 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
 
     const sketch = (p: p5) => {
         p5Ref = p;
-        let currentPallet: Record<string, string>;
-        let palletColors: string[];
+        let currentPalette: Record<string, string>;
+        let paletteColors: string[];
         let grid: GridCell[];
         let regions: Map<number, Region>;
         let cols: number;
@@ -147,13 +149,23 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
         let currentState: CellState[] | null = null;
         let nextState: CellState[] | null = null;
         let transitionProgress = 1;
-        let palletIndex = 0;
+        let paletteIndex = 0;
         let currentGridSize: number;
 
-        function pickNewPallet(): void {
-            palletIndex = (palletIndex + 1) % pallets.length;
-            currentPallet = pallets[palletIndex];
-            palletColors = Object.values(currentPallet);
+        // Pre-allocated corners array to avoid repeated allocations in draw loop
+        const corners: [number, number][] = [[0, 0], [0, 0], [0, 0], [0, 0]];
+
+        function updateCorners(x: number, y: number): void {
+            corners[0][0] = x;                     corners[0][1] = y;
+            corners[1][0] = x + currentGridSize;  corners[1][1] = y;
+            corners[2][0] = x + currentGridSize;  corners[2][1] = y + currentGridSize;
+            corners[3][0] = x;                     corners[3][1] = y + currentGridSize;
+        }
+
+        function pickNewPalette(): void {
+            paletteIndex = (paletteIndex + 1) % palettes.length;
+            currentPalette = palettes[paletteIndex];
+            paletteColors = Object.values(currentPalette);
         }
 
         function captureState(): CellState[] {
@@ -168,6 +180,21 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
                 });
             }
             return state;
+        }
+
+        // Reuse an existing array if the size matches, otherwise allocate new
+        function captureStateInto(existing: CellState[] | null): CellState[] {
+            if (!existing || existing.length !== grid.length) {
+                return captureState();
+            }
+            for (let i = 0; i < grid.length; i++) {
+                const cell = grid[i];
+                const region = regions.get(cell.regionRoot)!;
+                existing[i].color = p.color(region.color!);
+                existing[i].isSquare = cell.isSquare;
+                existing[i].skipCorner = cell.skipCorner;
+            }
+            return existing;
         }
 
         function lerpColor2(c1: p5.Color, c2: p5.Color, amt: number): p5.Color {
@@ -218,7 +245,7 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
 
             for (const [, region] of regionMap) {
                 if (region.cells.length > REGION_THRESHOLD) {
-                    const hexColor = p.random(palletColors);
+                    const hexColor = p.random(paletteColors);
                     region.color = '#' + hexColor;
                 } else {
                     const grayValue = p.random(Object.values(marble));
@@ -243,13 +270,7 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
         }
 
         function drawTriangle(x: number, y: number, skipCorner: number): void {
-            const corners: [number, number][] = [
-                [x, y],
-                [x + currentGridSize, y],
-                [x + currentGridSize, y + currentGridSize],
-                [x, y + currentGridSize]
-            ];
-
+            updateCorners(x, y);
             p.beginShape();
             for (let i = 0; i < 4; i++) {
                 if (i !== skipCorner) {
@@ -260,13 +281,7 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
         }
 
         function drawMorphingTriangle(x: number, y: number, fromSkip: number, toSkip: number, progress: number): void {
-            const corners: [number, number][] = [
-                [x, y],
-                [x + currentGridSize, y],
-                [x + currentGridSize, y + currentGridSize],
-                [x, y + currentGridSize]
-            ];
-
+            updateCorners(x, y);
             const centerX = x + currentGridSize / 2;
             const centerY = y + currentGridSize / 2;
 
@@ -289,13 +304,7 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
         }
 
         function drawMorphingShape(x: number, y: number, fromCell: CellState, toCell: CellState, progress: number): void {
-            const corners: [number, number][] = [
-                [x, y],
-                [x + currentGridSize, y],
-                [x + currentGridSize, y + currentGridSize],
-                [x, y + currentGridSize]
-            ];
-
+            updateCorners(x, y);
             const centerX = x + currentGridSize / 2;
             const centerY = y + currentGridSize / 2;
 
@@ -321,11 +330,7 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
             const canvas = p.createCanvas(container.clientWidth, container.clientHeight);
             canvas.parent(container);
             p.noStroke();
-            pickNewPallet();
-
-            // // Apply blur filter (only works with 2D context)
-            // p.filter(p.BLUR, BLUR_AMOUNT); // slow
-            // p.drawingContext.filter = 'blur(1px)'; // doesn't work on all browser renderers
+            pickNewPalette();
 
             generateRegions();
             currentState = captureState();
@@ -345,17 +350,20 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
         };
 
         p.draw = () => {
-            p.background(20);
+            p.background(BACKGROUND_COLOR);
 
             if (transitionProgress >= 1) {
+                // Swap states - reuse the old currentState array for the next capture
+                const temp = currentState;
                 currentState = nextState;
 
-                if (p.random() < 0.85) {
-                    pickNewPallet();
+                if (p.random() < PALETTE_CHANGE_PROBABILITY) {
+                    pickNewPalette();
                 }
 
                 generateRegions();
-                nextState = captureState();
+                // Reuse the old array if possible, otherwise capture fresh
+                nextState = captureStateInto(temp);
                 transitionProgress = 0;
             }
 
@@ -370,7 +378,7 @@ export function createSketch(container: HTMLElement, config: SketchConfig): { sk
                     const currCell = currentState![idx];
                     const nextCell = nextState![idx];
 
-                    const interpolatedColor = lerpColor2(currCell.color, nextCell.color, easedProgress);
+                    const interpolatedColor = p.lerpColor(currCell.color, nextCell.color, easedProgress);
                     p.fill(interpolatedColor);
 
                     if (currCell.isSquare === nextCell.isSquare) {
