@@ -1,12 +1,16 @@
 import type p5 from 'p5';
 
-// Configuration
-export const GRID_SIZE = 24;
+// Configuration defaults
+export const GRID_SIZE_MIN = 12;
+export const GRID_SIZE_MAX = 75;
+export const TRANSITION_FRAMES_MIN = 15;
+export const TRANSITION_FRAMES_MAX = 270;
+
 export const REGION_THRESHOLD = 16;
-export const MERGE_PROBABILITY = 0.5;
 export const MAX_REGION_SIZE = 36;
+
+export const MERGE_PROBABILITY = 0.5;
 export const BLUR_AMOUNT = 24;
-export const TRANSITION_FRAMES = 145;
 export const EASING_TYPE: 'linear' | 'easeInOutCubic' | 'easeInOutQuad' = 'easeInOutCubic';
 
 // Palettes
@@ -99,8 +103,15 @@ export function getEasing(t: number): number {
     }
 }
 
+// Sketch configuration interface
+export interface SketchConfig {
+    getGridSize: () => number;
+    getTransitionFrames: () => number;
+    onSizeChange?: (callback: () => void) => void;
+}
+
 // Create the sketch function
-export function createSketch(container: HTMLElement) {
+export function createSketch(container: HTMLElement, config: SketchConfig) {
     return (p: p5) => {
         let currentPallet: Record<string, string>;
         let palletColors: string[];
@@ -111,7 +122,8 @@ export function createSketch(container: HTMLElement) {
         let currentState: CellState[] | null = null;
         let nextState: CellState[] | null = null;
         let transitionProgress = 1;
-        let palletIndex = 0
+        let palletIndex = 0;
+        let currentGridSize: number;
 
         function pickNewPallet(): void {
             palletIndex = (palletIndex + 1) % pallets.length;
@@ -141,8 +153,9 @@ export function createSketch(container: HTMLElement) {
         }
 
         function generateRegions(): void {
-            cols = p.ceil(p.width / GRID_SIZE);
-            rows = p.ceil(p.height / GRID_SIZE);
+            currentGridSize = config.getGridSize();
+            cols = p.ceil(p.width / currentGridSize);
+            rows = p.ceil(p.height / currentGridSize);
             const totalCells = cols * rows;
 
             grid = [];
@@ -198,18 +211,18 @@ export function createSketch(container: HTMLElement) {
         function drawSquare(x: number, y: number): void {
             p.beginShape();
             p.vertex(x, y);
-            p.vertex(x + GRID_SIZE, y);
-            p.vertex(x + GRID_SIZE, y + GRID_SIZE);
-            p.vertex(x, y + GRID_SIZE);
+            p.vertex(x + currentGridSize, y);
+            p.vertex(x + currentGridSize, y + currentGridSize);
+            p.vertex(x, y + currentGridSize);
             p.endShape(p.CLOSE);
         }
 
         function drawTriangle(x: number, y: number, skipCorner: number): void {
             const corners: [number, number][] = [
                 [x, y],
-                [x + GRID_SIZE, y],
-                [x + GRID_SIZE, y + GRID_SIZE],
-                [x, y + GRID_SIZE]
+                [x + currentGridSize, y],
+                [x + currentGridSize, y + currentGridSize],
+                [x, y + currentGridSize]
             ];
 
             p.beginShape();
@@ -224,13 +237,13 @@ export function createSketch(container: HTMLElement) {
         function drawMorphingTriangle(x: number, y: number, fromSkip: number, toSkip: number, progress: number): void {
             const corners: [number, number][] = [
                 [x, y],
-                [x + GRID_SIZE, y],
-                [x + GRID_SIZE, y + GRID_SIZE],
-                [x, y + GRID_SIZE]
+                [x + currentGridSize, y],
+                [x + currentGridSize, y + currentGridSize],
+                [x, y + currentGridSize]
             ];
 
-            const centerX = x + GRID_SIZE / 2;
-            const centerY = y + GRID_SIZE / 2;
+            const centerX = x + currentGridSize / 2;
+            const centerY = y + currentGridSize / 2;
 
             p.beginShape();
             for (let i = 0; i < 4; i++) {
@@ -253,13 +266,13 @@ export function createSketch(container: HTMLElement) {
         function drawMorphingShape(x: number, y: number, fromCell: CellState, toCell: CellState, progress: number): void {
             const corners: [number, number][] = [
                 [x, y],
-                [x + GRID_SIZE, y],
-                [x + GRID_SIZE, y + GRID_SIZE],
-                [x, y + GRID_SIZE]
+                [x + currentGridSize, y],
+                [x + currentGridSize, y + currentGridSize],
+                [x, y + currentGridSize]
             ];
 
-            const centerX = x + GRID_SIZE / 2;
-            const centerY = y + GRID_SIZE / 2;
+            const centerX = x + currentGridSize / 2;
+            const centerY = y + currentGridSize / 2;
 
             p.beginShape();
             for (let i = 0; i < 4; i++) {
@@ -293,6 +306,16 @@ export function createSketch(container: HTMLElement) {
             currentState = captureState();
             nextState = captureState();
 
+            // Register size change callback to trigger regeneration
+            if (config.onSizeChange) {
+                config.onSizeChange(() => {
+                    generateRegions();
+                    currentState = captureState();
+                    nextState = captureState();
+                    transitionProgress = 0;
+                });
+            }
+
             p.frameRate(60);
         };
 
@@ -315,8 +338,8 @@ export function createSketch(container: HTMLElement) {
 
             for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < cols; col++) {
-                    const x = col * GRID_SIZE;
-                    const y = row * GRID_SIZE;
+                    const x = col * currentGridSize;
+                    const y = row * currentGridSize;
                     const idx = row * cols + col;
 
                     const currCell = currentState![idx];
@@ -341,7 +364,7 @@ export function createSketch(container: HTMLElement) {
                 }
             }
 
-            transitionProgress += 1 / TRANSITION_FRAMES;
+            transitionProgress += 1 / config.getTransitionFrames();
         };
 
         p.windowResized = () => {
