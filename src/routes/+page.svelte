@@ -1,6 +1,6 @@
 <script>
     import { Card } from "$lib/components/ui/card";
-    import MosaicMorph from "$lib/components/sketches/mosaic-morph.svelte";
+    import MosaicMorph from "$lib/components/sketches/mosaic-morph/mosaic-morph.svelte";
 </script>
 
 <h1 class="text-4xl text-center font-semibold py-8 ">Sketches</h1>
