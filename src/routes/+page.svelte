@@ -15,9 +15,9 @@
 <div class="mt-4">
 <Carousel.Root class="mx-auto w-full max-w-lg">
   <Carousel.Content>
-    {#each Array(1), i}
+    {#each Array(3), i}
       <Carousel.Item>
-        <MosaicMorph />
+        <MosaicMorph index={i} />
       </Carousel.Item>
     {/each}
   </Carousel.Content>

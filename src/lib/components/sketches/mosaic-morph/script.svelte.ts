@@ -110,9 +110,34 @@ export interface SketchConfig {
     onSizeChange?: (callback: () => void) => void;
 }
 
+// Controller for pause/resume functionality
+export interface SketchController {
+    pause: () => void;
+    resume: () => void;
+}
+
 // Create the sketch function
-export function createSketch(container: HTMLElement, config: SketchConfig) {
-    return (p: p5) => {
+export function createSketch(container: HTMLElement, config: SketchConfig): { sketch: (p: p5) => void; getController: () => SketchController } {
+    let isPaused = false;
+    let p5Ref: p5 | null = null;
+
+    const controller: SketchController = {
+        pause: () => {
+            isPaused = true;
+            if (p5Ref) {
+                p5Ref.noLoop();
+            }
+        },
+        resume: () => {
+            isPaused = false;
+            if (p5Ref) {
+                p5Ref.loop();
+            }
+        }
+    };
+
+    const sketch = (p: p5) => {
+        p5Ref = p;
         let currentPallet: Record<string, string>;
         let palletColors: string[];
         let grid: GridCell[];
@@ -374,4 +399,6 @@ export function createSketch(container: HTMLElement, config: SketchConfig) {
             nextState = captureState();
         };
     };
+
+    return { sketch, getController: () => controller };
 }
