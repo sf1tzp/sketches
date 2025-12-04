@@ -68,7 +68,7 @@
         <div class="flex justify-start mx-2 mt-8 gap-4">
             <div class="flex gap-2">
                 <Puzzle class="size-4 mt-1 font-light text-muted-foreground"/>
-                <h2 class="font-light text-muted-foreground hidden sm:inline-block font-mono">Size</h2>
+                <h2 class="font-light text-muted-foreground hidden sm:inline-block font-mono">size</h2>
             </div>
             <RadioGroup.Root value="0.4" onValueChange={(v) => gridSizeValue = parseFloat(v)} class="flex flex-row gap-4">
               <div class="flex items-center space-x-2">
@@ -92,7 +92,7 @@
         <div class="flex justify-start mx-2 mt-8 gap-4">
             <div class="flex gap-2">
                 <Gauge class="size-4 mt-1 font-light text-muted-foreground"/>
-                <h2 class="font-light text-muted-foreground font-mono hidden sm:inline-block">Speed</h2>
+                <h2 class="font-light text-muted-foreground font-mono hidden sm:inline-block">speed</h2>
             </div>
             <RadioGroup.Root value="0.8" onValueChange={(v) => speedValue = parseFloat(v)} class="flex flex-row gap-4">
               <div class="flex items-center space-x-2">
