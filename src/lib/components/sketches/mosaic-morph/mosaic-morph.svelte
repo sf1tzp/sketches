@@ -8,11 +8,14 @@
     import Puzzle from '@lucide/svelte/icons/puzzle';
     import CardTitle from '$lib/components/ui/card/card-title.svelte';
 
+    import { Label } from "$lib/components/ui/label/index.js";
+    import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
+
     let container: HTMLDivElement;
     let p5Instance: p5Type;
     let triggerSizeChange: (() => void) | null = null;
 
-    let gridSizeValue = $state(0.5);
+    let gridSizeValue = $state(0.4);
     let speedValue = $state(0.667);
 
     // Convert slider values (0-1) to actual config values
@@ -56,22 +59,61 @@
 
 <Card.Root class="max-w-lg h-vh mx-4 mb-4 sm:mx-auto">
     <Card.Header>
-        <Card.Title class="font-light text-center text-ld">mosaic morph</Card.Title>
+        <Card.Title class="font-light text-center text-ld font-mono">mosaic morph</Card.Title>
     </Card.Header>
     <Card.Content class="flex flex-col px-4">
         <div class="w-full h-100 sm:h-128">
             <div bind:this={container} class="size-full overflow-clip touch-pan-y"></div>
         </div>
-        <div class="flex justify-end px-4 mt-8">
-            <Puzzle class="size-8 mr-4 pb-1 text-muted-foreground"/>
-            <h2 class="mr-4 text-muted-foreground">Size</h2>
-            <Slider type="single" bind:value={gridSizeValue} max={1} step={0.01} class="" ></Slider>
+        <div class="flex justify-start mx-2 mt-8 gap-4">
+            <div class="flex gap-2">
+                <Puzzle class="size-4 mt-1 font-light text-muted-foreground"/>
+                <h2 class="font-light text-muted-foreground hidden sm:inline-block font-mono">Size</h2>
+            </div>
+            <RadioGroup.Root value="0.4" onValueChange={(v) => gridSizeValue = parseFloat(v)} class="flex flex-row gap-4">
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="0.1" id="size-small" />
+                <Label for="size-small" class="text-muted-foreground font-mono">small</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="0.4" id="size-med" />
+                <Label for="size-med" class="text-muted-foreground font-mono">med</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="0.7" id="size-large" />
+                <Label for="size-large" class="text-muted-foreground font-mono">large</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="1" id="size-xl" />
+                <Label for="size-xl" class="text-muted-foreground font-mono">xl</Label>
+              </div>
+            </RadioGroup.Root>
         </div>
-        <div class="flex justify-end px-4 mt-8">
-            <Gauge class="size-8 mr-4 pb-1 text-muted-foreground"/>
-            <h2 class="mr-4 text-muted-foreground">Speed</h2>
-            <Slider type="single" bind:value={speedValue} max={1} step={0.01} class="pb-2" ></Slider>
+        <div class="flex justify-start mx-2 mt-8 gap-4">
+            <div class="flex gap-2">
+                <Gauge class="size-4 mt-1 font-light text-muted-foreground"/>
+                <h2 class="font-light text-muted-foreground font-mono hidden sm:inline-block">Speed</h2>
+            </div>
+            <RadioGroup.Root value="0.8" onValueChange={(v) => speedValue = parseFloat(v)} class="flex flex-row gap-4">
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="0.2" id="speed-slow" />
+                <Label for="size-small" class="text-muted-foreground font-mono">slow</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="0.8" id="speed-med" />
+                <Label for="size-med" class="text-muted-foreground font-mono">med</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="0.9" id="speed-fast" />
+                <Label for="size-large" class="text-muted-foreground font-mono">fast</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <RadioGroup.Item value="0.967" id="speed-xl" />
+                <Label for="size-xl" class="text-muted-foreground font-mono">flash</Label>
+              </div>
+            </RadioGroup.Root>
         </div>
+
     </Card.Content>
 </Card.Root>
 
