@@ -1,4 +1,5 @@
 <script>
+    import CircleSineRain from "$lib/components/sketches/circle-sine-rain/circle-sine-rain.svelte";
     import MosaicMorph from "$lib/components/sketches/mosaic-morph/mosaic-morph.svelte";
     import * as Carousel from "$lib/components/ui/carousel/index.js";
 
@@ -15,6 +16,10 @@
 <div class="mt-4">
 <Carousel.Root class="mx-auto w-full max-w-lg">
   <Carousel.Content>
+      <Carousel.Item>
+        <CircleSineRain index={3} />
+      </Carousel.Item>
+
       <Carousel.Item>
         <MosaicMorph index={0} initialSize={0.4} initialSpeed={0.8}/>
       </Carousel.Item>
